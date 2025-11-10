@@ -26,21 +26,88 @@ matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
 matrix_sf* create_matrix_sf(char name, const char *expr) {  
     int nrow, ncol;
 
-    int dims = sscanf(expr, " %d %d [", &name, &nrow, &ncol);
+    /* Verify structure, irrelevant value beyond that */
+    char isBrkt;
 
-    if (dims == 2) {
-        int cur = strchr(str, '[');
-        if (cur == NULL) {
-            perror("MATRIX ENTRY NULL ERROR");
+    int dims = sscanf(expr, " %d %d %c", &nrow, &ncol, &isBrkt);
+    
+    /* Allocate storage/initialize matrix */
+    matrix_sf *mat = malloc(sizeof(matrix_sf) + sizeof(int) * nrow * ncol);
+    mat->name = name;
+    mat->num_rows = nrow;
+    mat->num_cols = ncol;
+
+    if ((dims == 3) && (isBrkt == '[')) {
+        char *cur = strchr(expr, '[');
+        if (*cur == NULL) {
+            perror("MATRIX CREATE: MISSING BRACKET ERROR");
+            exit(EXIT_FAILURE);
+        }
+        cur++;
+        
+        /* Index for adding values to matrix structure */
+        int i = 0;
+        int rowCt = 0;
+        /* LINK: https://en.cppreference.com/w/c/string/byte/strtol.html is insanely helpful */
+        while((*cur != '\0') && (*cur != ']') && (*rowCt < nrow)) {
+            int colCt = 0;
+            while ((*cur != ';') && (colCt < ncol)) {
+                char *end;
+                if (!((isspace(*cur) || (isdigit(*cur)) || (*cur == '-')))) {
+                    perror("MATRIX CREATE: INVALID ENTRY ERROR");
+                    exit(EXIT_FAILURE);
+                }
+                const long valLong = strtol(cur, &end, 10);
+                
+                if (cur == end) {
+                    perror("MATRIX CREATE: INVALID ENTRY ERROR");
+                    exit(EXIT_FAILURE);
+                }
+                
+                /* Noticed that the structs "values" array was int */
+                int val = (int)valLong;
+                /* The manual for strtol had error handling for this, but I am going to assume that no entry has
+                too big of a value for long */
+                cur = end;
+                
+                mat->values = val;
+                
+                /* Handling for if there is whitespace after final entry */ 
+                while (isspace(*cur)) {
+                    cur++;
+                }
+                /* Makes sure that there isnt too many inputs per row */
+                colCt++;
+                i++;
+            }
+            
+            if ((*cur != ';') || (colCt != ncol)) {
+                perror("MATRIX CREATE: COLUMN AMOUNT ERROR");
+                exit(EXIT_FAILURE);
+            }
+            rowCt++;
+        }
+        
+        /* To get rid of whitespace after last ';' */
+        while (isspace(*cur)) {
+            cur++;
+        }
+        
+        if (*cur != ']') {
+            perror("MATRIX CREATE: UNCLOSED ENTRIES ERROR");
             exit(EXIT_FAILURE);
         }
 
-
-        while((cur != '\0') && (cur != ']')) {
-            int indyrow = 
+        if (rowCt != nrow) {
+            perror("MATRIX CREATE: ROW AMOUNT ERROR");
+            exit(EXIT_FAILURE);
         }
 
         }
+    else {
+        perror("MATRIX CREATE: IMMEDIATE FORMAT ERROR");
+        exit(EXIT_FAILURE);
+    }
     return NULL;
 }
 
@@ -60,9 +127,6 @@ matrix_sf *execute_script_sf(char *filename) {
         perror("OPEN SCRIPT ERROR");
         exit(EXIT_FAILURE);
     }
-    
-    /* Initialized bst root to NULL so that it can be pointed to on call */
-    bst_sf *root = NULL;
     
     while ((line = getline(&str, &max_line_size, file)) != 1) {
         if (str == NULL) {
