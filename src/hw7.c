@@ -30,7 +30,7 @@ matrix_sf* find_bst_sf(char name, bst_sf *root) {
     else if (name > root->mat->name) {
         return find_bst_sf(name, root->right_child);
     }
-
+    /* Only terminates if root == NULL or root has the same name */
     return root->mat;
 }
 
@@ -38,7 +38,27 @@ void free_bst_sf(bst_sf *root) {
 }
 
 matrix_sf* add_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
-    return NULL;
+    if ((mat1 == NULL) || (mat2 == NULL)) {
+        perror("ADD: MATRIX VALIDITY ERROR");
+        exit(EXIT_FAILURE);
+    }
+    if (!((mat1->num_rows == mat2->num_rows) && (mat1->num_cols == mat2->num_cols))) {
+        perror("ADD: MATRIX COMPATIBILITY ERROR");
+        exit(EXIT_FAILURE);
+    }
+    
+    matrix_sf *sumMat = malloc(sizeof(matrix_sf) + sizeof(int) * mat1->num_rows * mat1->num_cols);
+    if (sumMat == NULL) {
+        perror("ADD: ALLOCATION ERROR");
+        exit(EXIT_FAILURE);
+    }
+    sumMat->num_rows = mat1->num_rows;
+    sumMat->num_cols = mat1->num_cols;
+    for (int i = 0; i < (mat1->num_rows*mat1->num_cols); i++) {
+        sumMat->values[i] = (mat1->values[i] + mat2->values[i]);
+    }
+
+    return sumMat;
 }
 
 matrix_sf* mult_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
