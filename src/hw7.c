@@ -39,7 +39,7 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
 
     if ((dims == 3) && (isBrkt == '[')) {
         char *cur = strchr(expr, '[');
-        if (*cur == NULL) {
+        if (cur == NULL) {
             perror("MATRIX CREATE: MISSING BRACKET ERROR");
             exit(EXIT_FAILURE);
         }
@@ -70,7 +70,7 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
                 too big of a value for long */
                 cur = end;
                 
-                mat->values = val;
+                mat->values[i] = val;
                 
                 /* Handling for if there is whitespace after final entry */ 
                 while (isspace(*cur)) {
@@ -86,11 +86,11 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
                 exit(EXIT_FAILURE);
             }
             rowCt++;
+            
+            /* To get rid of whitespace after ';' */
+            while (isspace(*cur)) {
+                cur++;
         }
-        
-        /* To get rid of whitespace after last ';' */
-        while (isspace(*cur)) {
-            cur++;
         }
         
         if (*cur != ']') {
@@ -108,7 +108,7 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
         perror("MATRIX CREATE: IMMEDIATE FORMAT ERROR");
         exit(EXIT_FAILURE);
     }
-    return NULL;
+    return *mat;
 }
 
 char* infix2postfix_sf(char *infix) {
@@ -120,6 +120,8 @@ matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
 }
 
 matrix_sf *execute_script_sf(char *filename) {
+    /* Initialize first root */
+    bst_sf *root = NULL;
     char *str = NULL;
     size_t max_line_size = MAX_LINE_LEN;
     FILE *file = fopen(filename, "r");
@@ -128,7 +130,7 @@ matrix_sf *execute_script_sf(char *filename) {
         exit(EXIT_FAILURE);
     }
     
-    while ((line = getline(&str, &max_line_size, file)) != 1) {
+    while ((line = getline(&str, &max_line_size, file)) != -1) {
         if (str == NULL) {
             perror("BUFFER NULL ERROR");
             exit(EXIT_FAILURE);
@@ -151,24 +153,24 @@ matrix_sf *execute_script_sf(char *filename) {
             /* Increment to after = */
             expr++;
 
-            matrix_sf *mat = create_matrix_sf(name,*expr);
+            matrix_sf *mat = create_matrix_sf(name, expr);
             
             /* Add to BST now */
 
-
+            
 
 
 
 
         }
         /* Else either a matrix operation or an error */
-        else: {
+        else {
 
         }
 
 
     }
-    
+
     free(str);
     fclose(file);
     exit(EXIT_SUCCESS);
@@ -201,3 +203,6 @@ void print_matrix_sf(matrix_sf *mat) {
     }
     printf("\n");
 }
+
+/* BEFORE SUBMITTING CONSIDER THIS: The function must insert  mat  into the BST even if any of 
+num_rows  ,  num_cols,  or  values  is invalid. */
