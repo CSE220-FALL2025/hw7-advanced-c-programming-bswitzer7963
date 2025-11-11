@@ -1,6 +1,13 @@
 /* Braden Switzer 115984660 */
 #include "hw7.h"
 
+/* Struct to act as linked list for my stack in evaluate, can access next so I can recursively call for push or pop like functions  */
+/* NEEDS AN INITIALIZED BASE, PLACE IN EVALUATE (I THINK) */
+typedef struct stack {
+    matrix_sf *mat;
+    struct stack *next;
+};
+
 bst_sf* insert_bst_sf(matrix_sf *nmat, bst_sf *root) {
     if (root == NULL) {
         root = malloc(sizeof(bst_sf));
@@ -73,17 +80,16 @@ matrix_sf* mult_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
     }
 
     matrix_sf *prodMat = malloc(sizeof(matrix_sf) + sizeof(int) * mat1->num_rows * mat2->num_cols);
-    if (sumMat == NULL) {
+    if (prodMat == NULL) {
         perror("MULT: ALLOCATION ERROR");
         exit(EXIT_FAILURE);
     }
     prodMat->num_rows = mat1->num_rows;
     prodMat->num_cols = mat2->num_cols;
 
-    /* Doing these in this structure hurt my head for some reason */
+    /* i, j for indexing through prodMat and k uses iSum to accumulate the mar1 row and mat2 column products */
     for (int i = 0; i < prodMat->num_rows; i++) {
         for (int j = 0; j < prodMat->num_cols; j++) {
-            /* To sum up mat1 row and mat2 column products */
             int iSum = 0;
             for (int k = 0; k < mat1->num_cols; k++){
                 iSum += (mat1->values[k + mat1->num_cols * i]) * (mat2->values[j + mat2->num_cols * k]);
@@ -96,7 +102,28 @@ matrix_sf* mult_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
 }
 
 matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
-    return NULL;
+    if ((mat == NULL)) {
+        perror("TRANS: MATRIX VALIDITY ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Values[] will be same size as original */
+    matrix_sf *transMat = malloc(sizeof(matrix_sf) + sizeof(int) * mat->num_rows * mat->num_cols);
+    if (transMat == NULL) {
+        perror("TRANS: ALLOCATION ERROR");
+        exit(EXIT_FAILURE);
+    }
+    
+    transMat->num_rows = mat->num_cols;
+    transMat->num_cols = mat->num_rows;
+
+    for (int i = 0; i < transMat->num_rows; i++) {
+        for (int j = 0; j < transMat->num_cols; j++) {
+            transMat->values[i + (transMat->num_cols * j)] = mat->values[j + (mat->num_cols * i)]
+        }
+    }
+
+    return transMat;
 }
 
 matrix_sf* create_matrix_sf(char name, const char *expr) {  
