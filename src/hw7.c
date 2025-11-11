@@ -1,3 +1,4 @@
+/* Braden Switzer 115984660 */
 #include "hw7.h"
 
 bst_sf* insert_bst_sf(matrix_sf *nmat, bst_sf *root) {
@@ -62,7 +63,36 @@ matrix_sf* add_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
 }
 
 matrix_sf* mult_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
-   return NULL;
+   if ((mat1 == NULL) || (mat2 == NULL)) {
+        perror("MULT: MATRIX VALIDITY ERROR");
+        exit(EXIT_FAILURE);
+    }
+    if (mat1->num_cols != mat2->num_rows) {
+        perror("MULT: MATRIX COMPATIBILITY ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    matrix_sf *prodMat = malloc(sizeof(matrix_sf) + sizeof(int) * mat1->num_rows * mat2->num_cols);
+    if (sumMat == NULL) {
+        perror("MULT: ALLOCATION ERROR");
+        exit(EXIT_FAILURE);
+    }
+    prodMat->num_rows = mat1->num_rows;
+    prodMat->num_cols = mat2->num_cols;
+
+    /* Doing these in this structure hurt my head for some reason */
+    for (int i = 0; i < prodMat->num_rows; i++) {
+        for (int j = 0; j < prodMat->num_cols; j++) {
+            /* To sum up mat1 row and mat2 column products */
+            int iSum = 0;
+            for (int k = 0; k < mat1->num_cols; k++){
+                iSum += (mat1->values[k + mat1->num_cols * i]) * (mat2->values[j + mat2->num_cols * k]);
+            }
+            prodMat->values[j + (prodMat->num_cols * i)] = iSum;
+        }
+    }
+
+    return prodMat;
 }
 
 matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
@@ -79,6 +109,10 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
     
     /* Allocate storage/initialize matrix */
     matrix_sf *mat = malloc(sizeof(matrix_sf) + sizeof(int) * nrow * ncol);
+    if (mat == NULL) {
+        perror("ADD: ALLOCATION ERROR");
+        exit(EXIT_FAILURE);
+    }
     mat->name = name;
     mat->num_rows = nrow;
     mat->num_cols = ncol;
