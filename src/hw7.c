@@ -1,11 +1,37 @@
 #include "hw7.h"
 
-bst_sf* insert_bst_sf(matrix_sf *mat, bst_sf *root) {
-    return NULL;
+bst_sf* insert_bst_sf(matrix_sf *nmat, bst_sf *root) {
+    if (root == NULL) {
+        root = malloc(sizeof(bst_sf));
+        root->mat = nmat;
+        root->left_child = NULL;
+        root->right_child = NULL;
+    }
+    else {
+        /* Assuming all name values are unique */
+        if (nmat->name < root->mat->name) {
+            root->left_child = insert_bst_sf(nmat, root->left_child);
+        }
+        else {
+            root->right_child = insert_bst_sf(nmat, root->right_child);
+        }
+    }
+    /* Initially returns original root, recursively calls function to see if NULL, if yes, place there, if not, recursively calls... */
+    return root;
 }
 
 matrix_sf* find_bst_sf(char name, bst_sf *root) {
-    return NULL;
+    if (root == NULL) {
+        return NULL;
+    }
+    else if (name < root->mat->name) {
+        return find_bst_sf(name, root->left_child);
+    }
+    else if (name > root->mat->name) {
+        return find_bst_sf(name, root->right_child);
+    }
+
+    return root->mat;
 }
 
 void free_bst_sf(bst_sf *root) {
@@ -153,11 +179,11 @@ matrix_sf *execute_script_sf(char *filename) {
             /* Increment to after = */
             expr++;
 
+            /* Make Matrix */
             matrix_sf *mat = create_matrix_sf(name, expr);
             
-            /* Add to BST now */
-
-            
+            /* Add to BST */
+            root = insert_bst_sf(mat, root)
 
 
 
