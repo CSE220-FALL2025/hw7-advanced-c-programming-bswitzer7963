@@ -3,10 +3,20 @@
 
 /* Struct to act as linked list for my stack in evaluate, can access next so I can recursively call for push or pop like functions  */
 /* NEEDS AN INITIALIZED BASE, PLACE IN EVALUATE (I THINK) */
-typedef struct stack {
-    matrix_sf *mat;
-    struct stack *next;
-};
+/* Next 3 heavily inspired by lecture slides */
+// typedef struct stack {
+//     matrix_sf *mat;
+//     struct stack *next;
+// } stack;
+
+// /* Similar to add_to_list() in lecture slides, probably have to free using loop at end */
+// stack *push(stack *stk, i) {
+
+// }
+
+// stack *pop() {
+
+// }
 
 bst_sf* insert_bst_sf(matrix_sf *nmat, bst_sf *root) {
     if (root == NULL) {
@@ -137,7 +147,7 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
     /* Allocate storage/initialize matrix */
     matrix_sf *mat = malloc(sizeof(matrix_sf) + sizeof(int) * nrow * ncol);
     if (mat == NULL) {
-        perror("ADD: ALLOCATION ERROR");
+        perror("CREATE: ALLOCATION ERROR");
         exit(EXIT_FAILURE);
     }
     mat->name = name;
@@ -218,11 +228,83 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
     return *mat;
 }
 
+/* For use in creating postfix */
+int prec(char op) {
+    if (op == '\'') {
+        return 3;
+    }
+    else if (op == '*') {
+        return 2;
+    }
+    else if (op == '+') {
+        return 1;
+    }
+    return -1;
+}
+
+/* MAKE SURE TO GET RID OF SPACE TAKEN UP BY THIS AFTER FUNCTION IS DONE */
 char* infix2postfix_sf(char *infix) {
-    return NULL;
+    /* sscanf search until find value (Either matrix name, operation or parenthesis) */
+    /* Top so that I know where in my array I am to be able to modify the correct values */
+    int top = 0;
+    size_t len = strlen(*infix);
+    /* Made all 0 so that I could check for 0 */
+    char opStk[len] = {0};
+    char *postfix = malloc(sizeof(char) * (len + 1));
+    if (postfix == NULL) {
+        perror("IF2P: ALLOCATION ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    while (*infix != '\0') {
+        char curVal;
+        char num = sscanf(infix, " %c ", &curVal);
+
+        if ((curVal >= 'A') && (curVal <= 'Z')) {
+            *postfix = curVal;
+            postfix++;
+        }
+        else if (curVal == '(') {
+            opStk[top] = '(';
+            top++;
+        }
+        else if (curVal == ')') {
+            while (top != '(') {
+                *postfix = opStk[top];
+                postfix++;
+                opStk[top] = 0;
+                if (top != 0) {
+                    top--;
+                }
+                /* Makes sure there is starting parenthesis */
+                else {
+                    perror("IF2P: FORMAT ERROR");
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+        else if () {
+
+        }
+
+        
+        }
+        while (isspace(*infix)) {
+            infix++;
+        }
+    }
+    
+    
+    
+    return *postfix;
 }
 
 matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
+    /* Before call change to postfix, initialize a stack and a string to hold the postfix values. After, deallocate stack (??) */
+    char *postfix = NULL;
+    stack *head = NULL;
+
+    
     return NULL;
 }
 
@@ -272,7 +354,34 @@ matrix_sf *execute_script_sf(char *filename) {
         }
         /* Else either a matrix operation or an error */
         else {
+            char evCh;
+            int isEval = sscanf(str, " %c = %c ", &name, &evCh);
 
+            if (isEval == 2) {
+                if (!((evCh > 'A') && (evCh < 'Z')) || (evCh == '(')) {
+                    perror("EVAL CHARACTER VALIDITY ERROR");
+                    exit(EXIT_FAILURE);
+                }
+
+                /* Copied from above */
+                char *expr = strchr(str, '=');
+                
+                if ((*expr == NULL) || (*(expr + 1) == NULL)) {
+                    perror("EVAL EXPRESSION NULL ERROR");
+                    exit(EXIT_FAILURE);
+                }
+                expr++;
+
+                /* Evaluate Matrix */
+                matrix_sf *mat = evaluate_expr_sf(name, expr);
+
+
+
+            }
+            else {
+                perror("INVALID FORMAT CRITICAL ERROR");
+                exit(EXIT_FAILURE);
+            }
         }
 
 
@@ -284,6 +393,8 @@ matrix_sf *execute_script_sf(char *filename) {
    
     return NULL;
 }
+
+
 
 // This is a utility function used during testing. Feel free to adapt the code to implement some of
 // the assignment. Feel equally free to ignore it.
