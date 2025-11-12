@@ -245,65 +245,102 @@ int prec(char op) {
 /* MAKE SURE TO GET RID OF SPACE TAKEN UP BY THIS AFTER FUNCTION IS DONE */
 char* infix2postfix_sf(char *infix) {
     /* sscanf search until find value (Either matrix name, operation or parenthesis) */
-    /* Top so that I know where in my array I am to be able to modify the correct values */
-    int top = 0;
-    size_t len = strlen(*infix);
+    /* Top so that I know where in my array I am to be able to modify the correct values,
+    starts at -1 because will increment before first call to 0 */
+    int top = -1;
+    size_t len = strlen(infix);
     /* Made all 0 so that I could check for 0 */
     char opStk[len] = {0};
     char *postfix = malloc(sizeof(char) * (len + 1));
+    
     if (postfix == NULL) {
         perror("IF2P: ALLOCATION ERROR");
         exit(EXIT_FAILURE);
     }
 
+    /* To make sure I can return a pointer to the beginning, not the end */
+    char *beginning = postfix;
+
     while (*infix != '\0') {
         char curVal;
-        char num = sscanf(infix, " %c ", &curVal);
+        char need1 = sscanf(infix, " %c ", &curVal);
+        
+        if (need1 != 1) {
+            perror("IF2P: INVALID ENTRY ERROR");
+            exit(EXIT_FAILURE);
+        }
 
         if ((curVal >= 'A') && (curVal <= 'Z')) {
             *postfix = curVal;
             postfix++;
         }
         else if (curVal == '(') {
-            opStk[top] = '(';
             top++;
+            opStk[top] = '(';
         }
         else if (curVal == ')') {
-            while (top != '(') {
+            while ((top != 0) && (opStk[top] != '(')) {
                 *postfix = opStk[top];
                 postfix++;
                 opStk[top] = 0;
-                if (top != 0) {
-                    top--;
-                }
+                top--;
                 /* Makes sure there is starting parenthesis */
-                else {
-                    perror("IF2P: FORMAT ERROR");
-                    exit(EXIT_FAILURE);
-                }
+                
             }
-
-        else if () {
-
+            if (top == 0) {
+                perror("IF2P: FORMAT ERROR");
+                exit(EXIT_FAILURE);
+            }
+            /* Get rid of starting parenthesis */
+            opStk[top] = 0;
+            top--;
         }
-
-        
+        else if (curVal == '\'') {
+            while ((opStk[top] != 0) || (opStk[top] != '(')) {
+                *postfix = opStk[top];
+                postfix++;
+                opStk[top] = 0;
+                top--;
+            }
+            top++;
+            opStk[top] = curVal;
         }
+        else if ((curVal == '*') || (curVal == '+')) {
+            while ((top >= 0) && ((prec(curVal)) < (prec(opStk[top])))) {
+                *postfix = opStk[top];
+                postfix++;
+                opStk[top] = 0;
+                top--;
+            }
+            top++;
+            opStk[top] = curVal;
+        }
+        else {
+            perror("IF2P: INVALID CHARACTER ERROR");
+            exit(EXIT_FAILURE);
+        }
+        /* Make sure doesn't keep scanning after final value entry before hitting \0 */
         while (isspace(*infix)) {
             infix++;
         }
     }
-    
-    
-    
-    return *postfix;
+    while (top >= 0) {
+        *postfix = opStk[top];
+        postfix++;
+        opStk[top] = 0;
+        top--;
+    }
+
+    *postfix = '\0';
+
+    return beginning;
 }
 
 matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
     /* Before call change to postfix, initialize a stack and a string to hold the postfix values. After, deallocate stack (??) */
     char *postfix = NULL;
     stack *head = NULL;
-
+    /* If postfix has zeroes i iterated wrong on last one */
     
     return NULL;
 }
