@@ -290,6 +290,7 @@ char* infix2postfix_sf(char *infix) {
     char curVal;
 
     while (*infix != '\0') {
+        *postfix = '\0';
         printf("TOP: %d\nINFIX: %sPOSTFIX: %s\n\n", top, infix, beginning);
         if (top >= 0) {
             printf("^^^^OPSTK[top]:%c\n\n", opStk[top]);
@@ -302,13 +303,8 @@ char* infix2postfix_sf(char *infix) {
             infix++;
         }
 
+        /* Pointer index*/
          curVal = *infix;
-        
-        /* if (need1 != 1) { */
-        if (!((curVal >= 'A' && curVal <= 'Z') || (curVal == '\'') || (curVal == '*') || (curVal == '+'))) {
-            perror("IFP: INVALID ENTRY ERROR");
-            exit(EXIT_FAILURE);
-        }
 
         if ((curVal >= 'A') && (curVal <= 'Z')) {
             *postfix = curVal;
@@ -334,11 +330,11 @@ char* infix2postfix_sf(char *infix) {
             }
             /* Get rid of starting parenthesis */
             opStk[top] = 0;
-            /* I THINK THIS IS GIVING SEGMENTATION ERROR */
             top--;
         }
         else if (curVal == '\'') {
             while ((top >= 0) && (opStk[top] != '(')) {
+            /* while ((top >= 0) && (prec(opStk[top]) >= prec(curVal))) { */
                 *postfix = opStk[top];
                 postfix++;
                 opStk[top] = 0;
