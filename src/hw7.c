@@ -273,6 +273,7 @@ char* infix2postfix_sf(char *infix) {
     size_t len = strlen(infix);
     /* Made all 0 so that I could check for 0 */
     char opStk[len + 1];
+
     for (size_t stkInd = 0; stkInd < len; stkInd++) {
         opStk[stkInd] = 0;
     }
@@ -287,6 +288,10 @@ char* infix2postfix_sf(char *infix) {
     char *beginning = postfix;
 
     while (*infix != '\0') {
+        printf("TOP: %d\nINFIX: %sPOSTFIX: %s\n", top, infix, beginning);
+        if (top >= 0) {
+            printf("OPSTK[top]:%c\n\n", opStk[top]);
+        }
         char curVal;
         int need1 = sscanf(infix, " %c", &curVal);
         
@@ -298,6 +303,7 @@ char* infix2postfix_sf(char *infix) {
         if ((curVal >= 'A') && (curVal <= 'Z')) {
             *postfix = curVal;
             postfix++;
+            infix++;
         }
         else if (curVal == '(') {
             /* Mimics push */
@@ -319,6 +325,7 @@ char* infix2postfix_sf(char *infix) {
             }
             /* Get rid of starting parenthesis */
             opStk[top] = 0;
+            /* I THINK THIS IS GIVING SEGMENTATION ERROR */
             top--;
         }
         else if (curVal == '\'') {
@@ -345,10 +352,12 @@ char* infix2postfix_sf(char *infix) {
             perror("IFP: INVALID CHARACTER ERROR");
             exit(EXIT_FAILURE);
         }
+        infix++;
         /* Make sure doesn't keep scanning after final value entry before hitting \0 */
         while (isspace(*infix)) {
             infix++;
         }
+
     }
     while (top >= 0) {
         *postfix = opStk[top];
@@ -358,6 +367,11 @@ char* infix2postfix_sf(char *infix) {
     }
 
     *postfix = '\0';
+
+    printf("\n\n FINAL ---- TOP: %d\nINFIX: %sPOSTFIX: %s\n", top, infix, beginning);
+        if (top >= 0) {
+            printf("OPSTK[top]:%c\n\n", opStk[top]);
+        }
 
     return beginning;
 }
@@ -490,7 +504,7 @@ matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
         exit(EXIT_FAILURE);
     }
 
-    free(postfix);
+    // free(postfix);
 
     return final;
 }
@@ -535,6 +549,12 @@ matrix_sf *execute_script_sf(char *filename) {
             /* Make Matrix */
             mat = create_matrix_sf(name, expr);
             
+            if (mat == NULL) {
+                perror("CREATED MATRIX NULL ERROR");
+                exit(EXIT_FAILURE);
+            }
+        
+            printf("MATRIX CREATED: %c\n", name);
             /* Add to BST */
             root = insert_bst_sf(mat, root);
         }
@@ -542,7 +562,7 @@ matrix_sf *execute_script_sf(char *filename) {
         else {
             char evCh;
             int isEval = sscanf(str, " %c = %c ", &name, &evCh);
-            printf("Name: %c, First: %c", name, evCh);
+            printf("Name: %c, First: %c\n", name, evCh);
             if (isEval == 2) {
                 if (!((evCh >= 'A') && (evCh <= 'Z')) || (evCh == '(')) {
                     perror("EVAL CHARACTER VALIDITY ERROR");
