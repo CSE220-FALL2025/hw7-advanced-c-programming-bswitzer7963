@@ -42,6 +42,20 @@ matrix_sf* find_bst_sf(char name, bst_sf *root) {
 }
 
 void free_bst_sf(bst_sf *root) {
+    if (root == NULL) {
+        return;
+    }
+    else {
+        free_bst_sf(root->left_child);
+        free_bst_sf(root->right_child);
+        if (root->mat->name == '$') {
+            free(root);
+        }
+        else {
+            free(root->mat);
+            free(root);
+        }
+    }
 }
 
 matrix_sf* add_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
@@ -502,11 +516,7 @@ matrix_sf *execute_script_sf(char *filename) {
             matrix_sf *mat = create_matrix_sf(name, expr);
             
             /* Add to BST */
-            root = insert_bst_sf(mat, root)
-
-
-
-
+            root = insert_bst_sf(mat, root);
         }
         /* Else either a matrix operation or an error */
         else {
@@ -536,9 +546,7 @@ matrix_sf *execute_script_sf(char *filename) {
                     exit(EXIT_FAILURE);
                 }
 
-                
-
-
+                root = insert_bst_sf(mat, root);
             }
             else {
                 perror("INVALID FORMAT CRITICAL ERROR");
@@ -546,14 +554,20 @@ matrix_sf *execute_script_sf(char *filename) {
             }
         }
 
-
     }
+    
+    char tempName = mat->name;
+    /* Trying to make sure that free_bst_sf() doesn't deallocate the final matrix, temporarily renamed as '$' */
+    mat->name = '$';
+    free_bst_sf(root);
 
+    mat->name = tempName;
+    
     free(str);
     fclose(file);
     exit(EXIT_SUCCESS);
    
-    return NULL;
+    return mat;
 }
 
 
