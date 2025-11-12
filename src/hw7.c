@@ -77,7 +77,9 @@ matrix_sf* add_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
     sumMat->name = '?';
     sumMat->num_rows = mat1->num_rows;
     sumMat->num_cols = mat1->num_cols;
-    for (int i = 0; i < (mat1->num_rows*mat1->num_cols); i++) {
+    
+    /* Trying to run Make didn't like int, needs unsigned int. Stack overflow reccomended size_t */
+    for (size_t i = 0; i < (mat1->num_rows*mat1->num_cols); i++) {
         sumMat->values[i] = (mat1->values[i] + mat2->values[i]);
     }
 
@@ -105,10 +107,10 @@ matrix_sf* mult_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
     prodMat->num_cols = mat2->num_cols;
 
     /* i, j for indexing through prodMat and k uses iSum to accumulate the mar1 row and mat2 column products */
-    for (int i = 0; i < prodMat->num_rows; i++) {
-        for (int j = 0; j < prodMat->num_cols; j++) {
+    for (size_t i = 0; i < prodMat->num_rows; i++) {
+        for (size_t j = 0; j < prodMat->num_cols; j++) {
             int iSum = 0;
-            for (int k = 0; k < mat1->num_cols; k++){
+            for (size_t k = 0; k < mat1->num_cols; k++){
                 iSum += (mat1->values[k + mat1->num_cols * i]) * (mat2->values[j + mat2->num_cols * k]);
             }
             prodMat->values[j + (prodMat->num_cols * i)] = iSum;
@@ -125,7 +127,7 @@ matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
     }
 
     /* Values[] will be same size as original */
-    matrix_sf *transMat = malloc(sizeof(matrix_sf) + sizeof(int) * mat->num_rows * mat->num_cols);
+    matrix_sf *transMat = malloc(sizeof(matrix_sf) + (sizeof(int) * mat->num_rows * mat->num_cols));
     if (transMat == NULL) {
         perror("TRANS: ALLOCATION ERROR");
         exit(EXIT_FAILURE);
@@ -135,9 +137,9 @@ matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
     transMat->num_rows = mat->num_cols;
     transMat->num_cols = mat->num_rows;
 
-    for (int i = 0; i < transMat->num_rows; i++) {
-        for (int j = 0; j < transMat->num_cols; j++) {
-            transMat->values[i + (transMat->num_cols * j)] = mat->values[j + (mat->num_cols * i)]
+    for (size_t i = 0; i < transMat->num_rows; i++) {
+        for (size_t j = 0; j < transMat->num_cols; j++) {
+            transMat->values[i + (transMat->num_cols * j)] = mat->values[j + (mat->num_cols * i)];
         }
     }
 
@@ -147,10 +149,7 @@ matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
 matrix_sf* create_matrix_sf(char name, const char *expr) {  
     int nrow, ncol;
 
-    /* Verify structure, irrelevant value beyond that */
-    char isBrkt;
-
-    int dims = sscanf(expr, " %d %d %c", &nrow, &ncol, &isBrkt);
+    int dims = sscanf(expr, " %d %d", &nrow, &ncol);
     
     /* Allocate storage/initialize matrix */
     matrix_sf *mat = malloc(sizeof(matrix_sf) + sizeof(int) * nrow * ncol);
@@ -162,7 +161,7 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
     mat->num_rows = nrow;
     mat->num_cols = ncol;
 
-    if ((dims == 3) && (isBrkt == '[')) {
+    if ((dims == 2)) {
         char *cur = strchr(expr, '[');
         if (cur == NULL) {
             perror("MATRIX CREATE: MISSING BRACKET ERROR");
@@ -174,7 +173,7 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
         int i = 0;
         int rowCt = 0;
         /* LINK: https://en.cppreference.com/w/c/string/byte/strtol.html is insanely helpful */
-        while((*cur != '\0') && (*cur != ']') && (*rowCt < nrow)) {
+        while((*cur != '\0') && (*cur != ']') && (rowCt < nrow)) {
             int colCt = 0;
             while ((*cur != ';') && (colCt < ncol)) {
                 char *end;
@@ -206,18 +205,32 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
                 i++;
             }
             
-            if ((*cur != ';') || (colCt != ncol)) {
+            if (colCt != ncol) {
+                fprintf(stderr, "colCt: %d and ncol: %d", colCt, ncol);
                 perror("MATRIX CREATE: COLUMN AMOUNT ERROR");
                 exit(EXIT_FAILURE);
             }
             rowCt++;
             
-            /* To get rid of whitespace after ';' */
             while (isspace(*cur)) {
                 cur++;
-        }
+            }
+
+            if (*cur != ';') {
+                perror("MATRIX CREATE: MISSING SEMICOLON ERROR");
+                exit(EXIT_FAILURE);
+            }
+            cur++;
+
+            while (isspace(*cur)) {
+                cur++;
+            }
         }
         
+        /* To get rid of whitespace after final ';' */
+        while (isspace(*cur)) {
+            cur++;
+        }
         if (*cur != ']') {
             perror("MATRIX CREATE: UNCLOSED ENTRIES ERROR");
             exit(EXIT_FAILURE);
@@ -233,7 +246,8 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
         perror("MATRIX CREATE: IMMEDIATE FORMAT ERROR");
         exit(EXIT_FAILURE);
     }
-    return *mat;
+
+    return mat;
 }
 
 /* For use in creating postfix */
@@ -258,7 +272,10 @@ char* infix2postfix_sf(char *infix) {
     int top = -1;
     size_t len = strlen(infix);
     /* Made all 0 so that I could check for 0 */
-    char opStk[len] = {0};
+    char opStk[len + 1];
+    for (size_t stkInd = 0; stkInd < len; stkInd++) {
+        opStk[stkInd] = 0;
+    }
     char *postfix = malloc(sizeof(char) * (len + 1));
     
     if (postfix == NULL) {
@@ -507,7 +524,7 @@ matrix_sf *execute_script_sf(char *filename) {
         if (isCreate == 2)  {
             char *expr = strchr(str, '=');
             /* I dont think it can be NULL because isCreate already == 2, but just in case */
-            if ((*expr == NULL) || (*(expr + 1) == NULL)) {
+            if ((expr == NULL) || (*(expr + 1) == '\0')) {
                 perror("MCREATE EXPRESSION NULL ERROR");
                 exit(EXIT_FAILURE);
             }
@@ -525,9 +542,9 @@ matrix_sf *execute_script_sf(char *filename) {
         else {
             char evCh;
             int isEval = sscanf(str, " %c = %c ", &name, &evCh);
-
+            printf("Name: %c, First: %c", name, evCh);
             if (isEval == 2) {
-                if (!((evCh > 'A') && (evCh < 'Z')) || (evCh == '(')) {
+                if (!((evCh >= 'A') && (evCh <= 'Z')) || (evCh == '(')) {
                     perror("EVAL CHARACTER VALIDITY ERROR");
                     exit(EXIT_FAILURE);
                 }
@@ -535,7 +552,7 @@ matrix_sf *execute_script_sf(char *filename) {
                 /* Copied from above */
                 char *expr = strchr(str, '=');
                 
-                if ((expr == NULL) || (*(expr + 1) == NULL)) {
+                if ((expr == NULL) || (*(expr + 1) == '\0')) {
                     perror("EVAL EXPRESSION NULL ERROR");
                     exit(EXIT_FAILURE);
                 }
@@ -544,7 +561,7 @@ matrix_sf *execute_script_sf(char *filename) {
                 /* Evaluate Matrix */
                 mat = evaluate_expr_sf(name, expr, root);
 
-                if (*mat == NULL) {
+                if (mat == NULL) {
                     perror("EVAL NULL OUTPUT ERROR");
                     exit(EXIT_FAILURE);
                 }
@@ -603,32 +620,6 @@ void print_matrix_sf(matrix_sf *mat) {
 /* BEFORE SUBMITTING CONSIDER THIS: The function must insert  mat  into the BST even if any of 
 num_rows  ,  num_cols,  or  values  is invalid. */
 
-/* MAIN FUNCTION SO THAT I CAN PRINT OUT MATRICES USING TERMINAL COMMANDS, FOR DEBUGGING */
-int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        perror("MAIN: ARUGMENT COUNT ERROR");
-        exit(EXIT_FAILURE);
-    }
-
-    if (argv[2] != 'p') {
-        char *script = argv[2];
-        
-        matrix_sf *final = execute_script_sf(script);
-
-        if (final == NULL) {
-            perror("MAIN: MATRIX OUTPUT NULL ERROR");
-            exit(EXIT_FAILURE);
-        }
-        else {
-            print_matrix_sf(final);
-        }
-    }
-    else {
-        perror("MAIN: DIDNT DO DA P ERROR");
-        exit(EXIT_FAILURE);
-    }
-
-    exit(EXIT_SUCCESS);
-}
+/* MAIN FUNCTION MOVED TO STUDENT_TESTS.C */
 
 
