@@ -333,14 +333,17 @@ char* infix2postfix_sf(char *infix) {
             top--;
         }
         else if (curVal == '\'') {
-            while ((top >= 0) && (opStk[top] != '(')) {
+            /* while ((top >= 0) && (opStk[top] != '(')) {
                 *postfix = opStk[top];
                 postfix++;
                 opStk[top] = 0;
                 top--;
             }
             top++;
-            opStk[top] = curVal;
+            opStk[top] = curVal; Kept running into issues using this, until I realized that in every situation, ' is just added to postfix 
+            no need for stack */
+            *postfix = curVal;
+            postfix++;
         }
         else if ((curVal == '*') || (curVal == '+')) {
             while ((top >= 0) && ((prec(curVal)) <= (prec(opStk[top])))) {
@@ -556,8 +559,8 @@ matrix_sf *execute_script_sf(char *filename) {
                 exit(EXIT_FAILURE);
             }
         
-            /* DEBUG: printf("MATRIX CREATED: %c\n", name); */
-            print_matrix_sf(mat);
+            /* DEBUG: printf("MATRIX CREATED: %c\n", name);
+            print_matrix_sf(mat); */
 
             /* Add to BST */
             root = insert_bst_sf(mat, root);

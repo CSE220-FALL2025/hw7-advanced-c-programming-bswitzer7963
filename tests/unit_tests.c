@@ -403,7 +403,7 @@ Test(base_create_matrix, create02, .description="Create a 7x3 matrix") {
     cr_expect_eq(mat->name, 'Z', "The new matrix did not have the expected name. Actual: %c, Expected: Z", mat->name);
 }
 
-/* infix2postfix_sf() tests */
+/* 2postfix_sf() tests */
 Test(base_infix2postfix, infix2postfix01, .description="Convert a simple infix expression to posfix") {
     char *actual = infix2postfix_sf("A+B*C");
     char *expected = "ABC*+";

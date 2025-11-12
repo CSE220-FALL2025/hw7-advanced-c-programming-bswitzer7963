@@ -1,4 +1,3 @@
-tests/student_tests.c
 bin/
 build/
 **/.DS_Store

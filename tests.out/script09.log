@@ -1,0 +1,14 @@
+==6174== Memcheck, a memory error detector
+==6174== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==6174== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==6174== Command: ./bin/execute_script script09
+==6174== 
+6 2 33 -6 -22 123 -36 47 63 -127 -65 -142 53 52
+==6174== 
+==6174== HEAP SUMMARY:
+==6174==     in use at exit: 0 bytes in 0 blocks
+==6174==   total heap usage: 13 allocs, 13 frees, 9,067 bytes allocated
+==6174== 
+==6174== All heap blocks were freed -- no leaks are possible
+==6174== 
+==6174== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
