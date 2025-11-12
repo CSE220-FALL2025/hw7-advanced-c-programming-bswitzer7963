@@ -309,7 +309,7 @@ char* infix2postfix_sf(char *infix) {
             }
             /* Makes sure there is starting parenthesis */  
             if (top < 0) {
-                perror("IF2P: FORMAT ERROR");
+                perror("IF2P: COLUMN AMOUNT ERROR");
                 exit(EXIT_FAILURE);
             }
             /* Get rid of starting parenthesis */
@@ -359,10 +359,14 @@ char* infix2postfix_sf(char *infix) {
 
 matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
     char *postfix = NULL;
-    /* If postfix has zeroes i iterated wrong on last one, check in debug */
+    /* If postfix has zeroes, I iterated wrong on last one, check in debug */
     postfix = infix2postfix_sf(expr);
 
-    
+    /* Realizing now I could have just iterated char by char instead of sscanf every time */
+    while (postfix != '\0') {
+        if ((postfix ) 
+
+    }
 
 
 
