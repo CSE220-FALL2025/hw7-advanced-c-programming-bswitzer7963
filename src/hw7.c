@@ -482,6 +482,9 @@ matrix_sf *execute_script_sf(char *filename) {
     /* Initialize first root */
     bst_sf *root = NULL;
     char *str = NULL;
+    ssize_t line;
+    /* To make sure that I can return the final referenced mat in the loop */
+    matrix_sf *mat = NULL;
     size_t max_line_size = MAX_LINE_LEN;
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
@@ -513,7 +516,7 @@ matrix_sf *execute_script_sf(char *filename) {
             expr++;
 
             /* Make Matrix */
-            matrix_sf *mat = create_matrix_sf(name, expr);
+            mat = create_matrix_sf(name, expr);
             
             /* Add to BST */
             root = insert_bst_sf(mat, root);
@@ -532,14 +535,14 @@ matrix_sf *execute_script_sf(char *filename) {
                 /* Copied from above */
                 char *expr = strchr(str, '=');
                 
-                if ((*expr == NULL) || (*(expr + 1) == NULL)) {
+                if ((expr == NULL) || (*(expr + 1) == NULL)) {
                     perror("EVAL EXPRESSION NULL ERROR");
                     exit(EXIT_FAILURE);
                 }
                 expr++;
 
                 /* Evaluate Matrix */
-                matrix_sf *mat = evaluate_expr_sf(name, expr, root);
+                mat = evaluate_expr_sf(name, expr, root);
 
                 if (*mat == NULL) {
                     perror("EVAL NULL OUTPUT ERROR");
@@ -555,21 +558,20 @@ matrix_sf *execute_script_sf(char *filename) {
         }
 
     }
-    
+    free(str);
+
     char tempName = mat->name;
     /* Trying to make sure that free_bst_sf() doesn't deallocate the final matrix, temporarily renamed as '$' */
     mat->name = '$';
     free_bst_sf(root);
 
     mat->name = tempName;
-    
-    free(str);
+
     fclose(file);
-    exit(EXIT_SUCCESS);
-   
+
+    /* DONT IGNORE: HAVE TO FIGURE OUT HOW TO REFERENCE MAT*/
     return mat;
 }
-
 
 
 // This is a utility function used during testing. Feel free to adapt the code to implement some of
@@ -600,3 +602,33 @@ void print_matrix_sf(matrix_sf *mat) {
 
 /* BEFORE SUBMITTING CONSIDER THIS: The function must insert  mat  into the BST even if any of 
 num_rows  ,  num_cols,  or  values  is invalid. */
+
+/* MAIN FUNCTION SO THAT I CAN PRINT OUT MATRICES USING TERMINAL COMMANDS, FOR DEBUGGING */
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        perror("MAIN: ARUGMENT COUNT ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    if (argv[2] != 'p') {
+        char *script = argv[2];
+        
+        matrix_sf *final = execute_script_sf(script);
+
+        if (final == NULL) {
+            perror("MAIN: MATRIX OUTPUT NULL ERROR");
+            exit(EXIT_FAILURE);
+        }
+        else {
+            print_matrix_sf(final);
+        }
+    }
+    else {
+        perror("MAIN: DIDNT DO DA P ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    exit(EXIT_SUCCESS);
+}
+
+
