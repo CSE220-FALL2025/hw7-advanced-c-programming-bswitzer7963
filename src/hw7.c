@@ -1,42 +1,11 @@
 /* Braden Switzer 115984660 */
 #include "hw7.h"
 
-/* Struct to act as linked list for my stack in evaluate, can access next so I can recursively call for push or pop like functions  */
-/* NEEDS AN INITIALIZED BASE, PLACE IN EVALUATE (I THINK) */
-/* Next 3 heavily inspired by lecture slides */
+/* Struct to act as linked list for my stack in evaluate */
 typedef struct stack {
     matrix_sf *mat;
     struct stack *next;
 } stack;
-
-/* Similar to add_to_list() in lecture slides, probably have to free using loop at end */
-stack *push(stack *head, matrix_sf *mat) {
-    stack *new_head = malloc(sizeof(stack));
-
-    if (new_head == NULL) {
-        perror("PUSH: ALLOCATION ERROR");
-        exit(EXIT_FAILURE);
-    }
-
-    new_head->mat = mat;
-    new_head->next = head;
-
-    return new_head;
-}
-
-stack *pop(stack *head) {
-    if (head == NULL) {
-        perror("POP: NULL STACK POINTER ERROR");
-        exit(EXIT_FAILURE);
-    }
-
-    /* Keeps intermediate values, MAKE SURE FREE LATER */
-    matrix_sf *mat = head->mat;
-    stack *next = head->next;
-    free(head);
-
-    return next;
-}
 
 bst_sf* insert_bst_sf(matrix_sf *mat, bst_sf *root) {
     if (root == NULL) {
@@ -90,6 +59,8 @@ matrix_sf* add_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
         perror("ADD: ALLOCATION ERROR");
         exit(EXIT_FAILURE);
     }
+
+    sumMat->name = '?';
     sumMat->num_rows = mat1->num_rows;
     sumMat->num_cols = mat1->num_cols;
     for (int i = 0; i < (mat1->num_rows*mat1->num_cols); i++) {
@@ -114,6 +85,8 @@ matrix_sf* mult_mats_sf(const matrix_sf *mat1, const matrix_sf *mat2) {
         perror("MULT: ALLOCATION ERROR");
         exit(EXIT_FAILURE);
     }
+
+    prodMat->name = '?';
     prodMat->num_rows = mat1->num_rows;
     prodMat->num_cols = mat2->num_cols;
 
@@ -144,6 +117,7 @@ matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
         exit(EXIT_FAILURE);
     }
     
+    transMat->name = '?';
     transMat->num_rows = mat->num_cols;
     transMat->num_cols = mat->num_rows;
 
@@ -274,7 +248,7 @@ char* infix2postfix_sf(char *infix) {
     char *postfix = malloc(sizeof(char) * (len + 1));
     
     if (postfix == NULL) {
-        perror("IF2P: ALLOCATION ERROR");
+        perror("IFP: ALLOCATION ERROR");
         exit(EXIT_FAILURE);
     }
 
@@ -286,7 +260,7 @@ char* infix2postfix_sf(char *infix) {
         int need1 = sscanf(infix, " %c", &curVal);
         
         if (need1 != 1) {
-            perror("IF2P: INVALID ENTRY ERROR");
+            perror("IFP: INVALID ENTRY ERROR");
             exit(EXIT_FAILURE);
         }
 
@@ -309,7 +283,7 @@ char* infix2postfix_sf(char *infix) {
             }
             /* Makes sure there is starting parenthesis */  
             if (top < 0) {
-                perror("IF2P: COLUMN AMOUNT ERROR");
+                perror("IFP: COLUMN AMOUNT ERROR");
                 exit(EXIT_FAILURE);
             }
             /* Get rid of starting parenthesis */
@@ -337,7 +311,7 @@ char* infix2postfix_sf(char *infix) {
             opStk[top] = curVal;
         }
         else {
-            perror("IF2P: INVALID CHARACTER ERROR");
+            perror("IFP: INVALID CHARACTER ERROR");
             exit(EXIT_FAILURE);
         }
         /* Make sure doesn't keep scanning after final value entry before hitting \0 */
@@ -357,22 +331,137 @@ char* infix2postfix_sf(char *infix) {
     return beginning;
 }
 
-matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
-    char *postfix = NULL;
-    /* If postfix has zeroes, I iterated wrong on last one, check in debug */
-    postfix = infix2postfix_sf(expr);
 
-    /* Realizing now I could have just iterated char by char instead of sscanf every time */
-    while (postfix != '\0') {
-        if ((postfix ) 
+/* Push/Pop heavily inspired by lecture slides (add_to_list(), etc), probably have to free using loop at end */
+stack *push(stack *head, matrix_sf *mat) {
+    stack *new_head = malloc(sizeof(stack));
 
+    if (new_head == NULL) {
+        perror("PUSH: ALLOCATION ERROR");
+        exit(EXIT_FAILURE);
     }
 
+    new_head->mat = mat;
+    new_head->next = head;
 
+    return new_head;
+}
 
+stack *pop(stack *head) {
+    if (head == NULL) {
+        perror("POP: NULL STACK POINTER ERROR");
+        exit(EXIT_FAILURE);
+    }
 
+    /* Keeps intermediate values, LOOK INTO BEFORE SUBMIT: matrix_sf *mat = head->mat;
+    I thought this was needed for a while, but now have no idea why */
+
+    stack *next = head->next;
+    free(head);
+
+    return next;
+}
+
+matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
+    char *postfix = NULL;
+    /* If postfix has zeroes, I iterated wrong in I2P, check in debug */
+    postfix = infix2postfix_sf(expr);
+
+    /* Initialize new empty head so that can be pushed and popped */
+    stack *head = NULL;
+
+    /* Realizing now, I could have just iterated char by char instead of sscanf every time in the previous function */
+    while (*postfix != '\0') {
+        if ((*postfix >= 'A') && (*postfix <= 'Z')) {
+            matrix_sf *mat = find_bst_sf(*postfix, root);
+            
+            if (mat == NULL) {
+                perror("EVAL: MATRIX NOT FOUND ERROR");
+                exit(EXIT_FAILURE);
+            }
+            
+            head = push(head, mat);
+            postfix++;
+        } 
+        /* Unary, only pop one matrix */
+        else if (*postfix == '\'') {
+            matrix_sf *new = transpose_mat_sf(head->mat);
+            
+            /* Frees space taken up by intermediate matrices, now named '?' */
+            if (head->mat->name == '?') {
+                free(head->mat);
+            }
+            /* Remove original, add new */
+            head = pop(head);
+            
+            head = push(head, new);
+            postfix++;
+        }
+        else if (*postfix == '*') {
+            matrix_sf *temp1 = head->mat;
+            
+            head = pop(head);
+            
+            matrix_sf *prod = mult_mats_sf(temp1, head->mat);
+            if (temp1->name == '?') {
+                free(temp1);
+            }
+            if (head->mat->name == '?') {
+                free(head->mat);
+            }
+            head = pop(head);
+
+            head = push(head, prod);
+            postfix++;
+        }
+        else if (*postfix == '+') {
+            matrix_sf *temp1 = head->mat;
+            
+            head = pop(head);
+
+            matrix_sf *sum = add_mats_sf(temp1, head->mat);
+            if (temp1->name == '?') {
+                free(temp1);
+            }
+            if (head->mat->name == '?') {
+                free(head->mat);
+            }
+            head = pop(head);
+
+            head = push(head, sum);
+            postfix++;
+        }
+        else {
+            perror("EVAL: POSTFIX CHARACTER INVALID ERROR");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if ((head == NULL) || (head->next != NULL)) {
+        perror("EVAL: STACK REMAINDER ERROR");
+        exit(EXIT_FAILURE);
+    } 
     
-    return NULL;
+    if (head->mat == NULL) {
+        perror("EVAL: STACK MATRIX NULL ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    /* The (Should be) only left, finished matrix, record in final */
+    matrix_sf *final = head->mat;
+
+    final->name = name;
+
+    head = pop(head);
+
+    if (head != NULL) {
+        perror("EVAL: STACK REMAINDER ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    free(postfix);
+
+    return final;
 }
 
 matrix_sf *execute_script_sf(char *filename) {
@@ -440,8 +529,14 @@ matrix_sf *execute_script_sf(char *filename) {
                 expr++;
 
                 /* Evaluate Matrix */
-                matrix_sf *mat = evaluate_expr_sf(name, expr);
+                matrix_sf *mat = evaluate_expr_sf(name, expr, root);
 
+                if (*mat == NULL) {
+                    perror("EVAL NULL OUTPUT ERROR");
+                    exit(EXIT_FAILURE);
+                }
+
+                
 
 
             }
