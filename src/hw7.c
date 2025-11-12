@@ -251,7 +251,7 @@ matrix_sf* create_matrix_sf(char name, const char *expr) {
     return mat;
 }
 
-/* For use in creating postfix */
+/* For use in creating postfix, assisted by posted link (as is infix2postfix_sf()) */
 int prec(char op) {
     if (op == '\'') {
         return 3;
@@ -265,13 +265,12 @@ int prec(char op) {
     return -1;
 }
 
-/* MAKE SURE TO GET RID OF SPACE TAKEN UP BY THIS AFTER FUNCTION IS DONE */
 char* infix2postfix_sf(char *infix) {
     /* Top so that I know where in my array I am to be able to modify the correct values,
     starts at -1 because will increment before first call to 0 */
     int top = -1;
     size_t len = strlen(infix);
-    /* Made all 0 so that I could check for 0 */
+    /* Made all 0 so that I could check for 0, EDIT: Didn't need check, but keeping in to avoid uncomfortable pointer situations */
     char opStk[len + 1];
 
     for (size_t stkInd = 0; stkInd < len; stkInd++) {
@@ -290,14 +289,15 @@ char* infix2postfix_sf(char *infix) {
     char curVal;
 
     while (*infix != '\0') {
-        *postfix = '\0';
-        printf("TOP: %d\nINFIX: %sPOSTFIX: %s\n\n", top, infix, beginning);
+        /* *postfix = '\0'; Without NULL terminating postfix my debug code for POSTFIX just wrote whatever*/ 
+        /* printf("TOP: %d\nINFIX: %sPOSTFIX: %s\n\n", top, infix, beginning);
         if (top >= 0) {
             printf("^^^^OPSTK[top]:%c\n\n", opStk[top]);
         }
-        
-        /* sscanf search until find value (Either matrix name, operation or parenthesis), REMOVED AND REPLACED BY POINTER INDEX */
-        /* int need1 = sscanf(infix, " %c", &curVal); */
+        */
+
+        /* sscanf search until find value (Either matrix name, operation or parenthesis), REMOVED AND REPLACED BY POINTER INDEX
+        int need1 = sscanf(infix, " %c", &curVal); */
         
         while (isspace(*infix)) {
             infix++;
@@ -334,7 +334,6 @@ char* infix2postfix_sf(char *infix) {
         }
         else if (curVal == '\'') {
             while ((top >= 0) && (opStk[top] != '(')) {
-            /* while ((top >= 0) && (prec(opStk[top]) >= prec(curVal))) { */
                 *postfix = opStk[top];
                 postfix++;
                 opStk[top] = 0;
@@ -358,7 +357,7 @@ char* infix2postfix_sf(char *infix) {
             exit(EXIT_FAILURE);
         }
         infix++;
-        /* Make sure doesn't keep scanning after final value entry before hitting \0 */
+        /* Gets rid of whitespace before '\0' so loop stops */
         while (isspace(*infix)) {
             infix++;
         }
@@ -373,16 +372,17 @@ char* infix2postfix_sf(char *infix) {
 
     *postfix = '\0';
 
-    printf("\n\n FINAL ---- TOP: %d\nINFIX: %sPOSTFIX: %s\n", top, infix, beginning);
+    /* DEBUG: printf("\n\n FINAL ---- TOP: %d\nINFIX: %sPOSTFIX: %s\n", top, infix, beginning);
         if (top >= 0) {
             printf("OPSTK[top]:%c\n\n", opStk[top]);
         }
+    */
 
     return beginning;
 }
 
 
-/* Push/Pop heavily inspired by lecture slides (add_to_list(), etc), probably have to free using loop at end */
+/* Push/Pop heavily inspired by lecture slides (add_to_list(), etc) */
 stack *push(stack *head, matrix_sf *mat) {
     stack *new_head = malloc(sizeof(stack));
 
@@ -403,9 +403,6 @@ stack *pop(stack *head) {
         exit(EXIT_FAILURE);
     }
 
-    /* Keeps intermediate values, LOOK INTO BEFORE SUBMIT: matrix_sf *mat = head->mat;
-    I thought this was needed for a while, but now have no idea why */
-
     stack *next = head->next;
     free(head);
 
@@ -414,14 +411,13 @@ stack *pop(stack *head) {
 
 matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
     char *postfix = NULL;
-    /* If postfix has zeroes, I iterated wrong in I2P, check in debug */
+    /* If postfix has zeroes, I iterated wrong in I2P, can check in debug */
     postfix = infix2postfix_sf(expr);
 
     char *beginning = postfix;
     /* Initialize new empty head so that can be pushed and popped */
     stack *head = NULL;
 
-    /* Realizing now, I could have just iterated char by char instead of sscanf every time in the previous function */
     while (*postfix != '\0') {
         if ((*postfix >= 'A') && (*postfix <= 'Z')) {
             matrix_sf *mat = find_bst_sf(*postfix, root);
@@ -544,7 +540,6 @@ matrix_sf *execute_script_sf(char *filename) {
 
         if (isCreate == 2)  {
             char *expr = strchr(str, '=');
-            /* I dont think it can be NULL because isCreate already == 2, but just in case */
             if ((expr == NULL) || (*(expr + 1) == '\0')) {
                 perror("MCREATE EXPRESSION NULL ERROR");
                 exit(EXIT_FAILURE);
@@ -561,7 +556,7 @@ matrix_sf *execute_script_sf(char *filename) {
                 exit(EXIT_FAILURE);
             }
         
-            printf("MATRIX CREATED: %c\n", name);
+            /* DEBUG: printf("MATRIX CREATED: %c\n", name); */
             print_matrix_sf(mat);
 
             /* Add to BST */
@@ -571,7 +566,7 @@ matrix_sf *execute_script_sf(char *filename) {
         else {
             char evCh;
             int isEval = sscanf(str, " %c = %c ", &name, &evCh);
-            printf("Name: %c, First: %c\n", name, evCh);
+            /* printf("Name: %c, First: %c\n", name, evCh); */ 
             if (isEval == 2) {
                 if (!(((evCh >= 'A') && (evCh <= 'Z')) || (evCh == '('))) {
                     perror("EVAL CHARACTER VALIDITY ERROR");
@@ -615,7 +610,6 @@ matrix_sf *execute_script_sf(char *filename) {
 
     fclose(file);
 
-    /* DONT IGNORE: HAVE TO FIGURE OUT HOW TO REFERENCE MAT*/
     return mat;
 }
 
@@ -645,9 +639,6 @@ void print_matrix_sf(matrix_sf *mat) {
     }
     printf("\n");
 }
-
-/* BEFORE SUBMITTING CONSIDER THIS: The function must insert  mat  into the BST even if any of 
-num_rows  ,  num_cols,  or  values  is invalid. */
 
 /* MAIN FUNCTION MOVED TO STUDENT_TESTS.C */
 
