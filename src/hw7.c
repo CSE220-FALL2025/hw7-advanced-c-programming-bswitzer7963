@@ -4,34 +4,54 @@
 /* Struct to act as linked list for my stack in evaluate, can access next so I can recursively call for push or pop like functions  */
 /* NEEDS AN INITIALIZED BASE, PLACE IN EVALUATE (I THINK) */
 /* Next 3 heavily inspired by lecture slides */
-// typedef struct stack {
-//     matrix_sf *mat;
-//     struct stack *next;
-// } stack;
+typedef struct stack {
+    matrix_sf *mat;
+    struct stack *next;
+} stack;
 
-// /* Similar to add_to_list() in lecture slides, probably have to free using loop at end */
-// stack *push(stack *stk, i) {
+/* Similar to add_to_list() in lecture slides, probably have to free using loop at end */
+stack *push(stack *head, matrix_sf *mat) {
+    stack *new_head = malloc(sizeof(stack));
 
-// }
+    if (new_head == NULL) {
+        perror("PUSH: ALLOCATION ERROR");
+        exit(EXIT_FAILURE);
+    }
 
-// stack *pop() {
+    new_head->mat = mat;
+    new_head->next = head;
 
-// }
+    return new_head;
+}
 
-bst_sf* insert_bst_sf(matrix_sf *nmat, bst_sf *root) {
+stack *pop(stack *head) {
+    if (head == NULL) {
+        perror("POP: NULL STACK POINTER ERROR");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Keeps intermediate values, MAKE SURE FREE LATER */
+    matrix_sf *mat = head->mat;
+    stack *next = head->next;
+    free(head);
+
+    return next;
+}
+
+bst_sf* insert_bst_sf(matrix_sf *mat, bst_sf *root) {
     if (root == NULL) {
         root = malloc(sizeof(bst_sf));
-        root->mat = nmat;
+        root->mat = mat;
         root->left_child = NULL;
         root->right_child = NULL;
     }
     else {
         /* Assuming all name values are unique */
-        if (nmat->name < root->mat->name) {
-            root->left_child = insert_bst_sf(nmat, root->left_child);
+        if (mat->name < root->mat->name) {
+            root->left_child = insert_bst_sf(mat, root->left_child);
         }
         else {
-            root->right_child = insert_bst_sf(nmat, root->right_child);
+            root->right_child = insert_bst_sf(mat, root->right_child);
         }
     }
     /* Initially returns original root, recursively calls function to see if NULL, if yes, place there, if not, recursively calls... */
@@ -263,7 +283,7 @@ char* infix2postfix_sf(char *infix) {
 
     while (*infix != '\0') {
         char curVal;
-        char need1 = sscanf(infix, " %c ", &curVal);
+        int need1 = sscanf(infix, " %c", &curVal);
         
         if (need1 != 1) {
             perror("IF2P: INVALID ENTRY ERROR");
@@ -275,19 +295,20 @@ char* infix2postfix_sf(char *infix) {
             postfix++;
         }
         else if (curVal == '(') {
+            /* Mimics push */
             top++;
             opStk[top] = '(';
         }
         else if (curVal == ')') {
-            while ((top != 0) && (opStk[top] != '(')) {
+            while ((top >= 0) && (opStk[top] != '(')) {
                 *postfix = opStk[top];
                 postfix++;
+                /* Mimics pop */
                 opStk[top] = 0;
-                top--;
-                /* Makes sure there is starting parenthesis */
-                
+                top--;  
             }
-            if (top == 0) {
+            /* Makes sure there is starting parenthesis */  
+            if (top < 0) {
                 perror("IF2P: FORMAT ERROR");
                 exit(EXIT_FAILURE);
             }
@@ -296,7 +317,7 @@ char* infix2postfix_sf(char *infix) {
             top--;
         }
         else if (curVal == '\'') {
-            while ((opStk[top] != 0) || (opStk[top] != '(')) {
+            while ((top >= 0) && (opStk[top] != '(')) {
                 *postfix = opStk[top];
                 postfix++;
                 opStk[top] = 0;
@@ -306,7 +327,7 @@ char* infix2postfix_sf(char *infix) {
             opStk[top] = curVal;
         }
         else if ((curVal == '*') || (curVal == '+')) {
-            while ((top >= 0) && ((prec(curVal)) < (prec(opStk[top])))) {
+            while ((top >= 0) && ((prec(curVal)) <= (prec(opStk[top])))) {
                 *postfix = opStk[top];
                 postfix++;
                 opStk[top] = 0;
@@ -337,10 +358,15 @@ char* infix2postfix_sf(char *infix) {
 }
 
 matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
-    /* Before call change to postfix, initialize a stack and a string to hold the postfix values. After, deallocate stack (??) */
     char *postfix = NULL;
-    stack *head = NULL;
-    /* If postfix has zeroes i iterated wrong on last one */
+    /* If postfix has zeroes i iterated wrong on last one, check in debug */
+    postfix = infix2postfix_sf(expr);
+
+    
+
+
+
+
     
     return NULL;
 }
