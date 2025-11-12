@@ -139,7 +139,8 @@ matrix_sf* transpose_mat_sf(const matrix_sf *mat) {
 
     for (size_t i = 0; i < transMat->num_rows; i++) {
         for (size_t j = 0; j < transMat->num_cols; j++) {
-            transMat->values[i + (transMat->num_cols * j)] = mat->values[j + (mat->num_cols * i)];
+            
+            transMat->values[j + (transMat->num_cols * i)] = mat->values[i + (mat->num_cols * j)];
         }
     }
 
@@ -266,7 +267,6 @@ int prec(char op) {
 
 /* MAKE SURE TO GET RID OF SPACE TAKEN UP BY THIS AFTER FUNCTION IS DONE */
 char* infix2postfix_sf(char *infix) {
-    /* sscanf search until find value (Either matrix name, operation or parenthesis) */
     /* Top so that I know where in my array I am to be able to modify the correct values,
     starts at -1 because will increment before first call to 0 */
     int top = -1;
@@ -287,15 +287,25 @@ char* infix2postfix_sf(char *infix) {
     /* To make sure I can return a pointer to the beginning, not the end */
     char *beginning = postfix;
 
+    char curVal;
+
     while (*infix != '\0') {
-        printf("TOP: %d\nINFIX: %sPOSTFIX: %s\n", top, infix, beginning);
+        printf("TOP: %d\nINFIX: %sPOSTFIX: %s\n\n", top, infix, beginning);
         if (top >= 0) {
-            printf("OPSTK[top]:%c\n\n", opStk[top]);
+            printf("^^^^OPSTK[top]:%c\n\n", opStk[top]);
         }
-        char curVal;
-        int need1 = sscanf(infix, " %c", &curVal);
         
-        if (need1 != 1) {
+        /* sscanf search until find value (Either matrix name, operation or parenthesis), REMOVED AND REPLACED BY POINTER INDEX */
+        /* int need1 = sscanf(infix, " %c", &curVal); */
+        
+        while (isspace(*infix)) {
+            infix++;
+        }
+
+         curVal = *infix;
+        
+        /* if (need1 != 1) { */
+        if (!((curVal >= 'A' && curVal <= 'Z') || (curVal == '\'') || (curVal == '*') || (curVal == '+'))) {
             perror("IFP: INVALID ENTRY ERROR");
             exit(EXIT_FAILURE);
         }
@@ -303,7 +313,6 @@ char* infix2postfix_sf(char *infix) {
         if ((curVal >= 'A') && (curVal <= 'Z')) {
             *postfix = curVal;
             postfix++;
-            infix++;
         }
         else if (curVal == '(') {
             /* Mimics push */
@@ -412,6 +421,7 @@ matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
     /* If postfix has zeroes, I iterated wrong in I2P, check in debug */
     postfix = infix2postfix_sf(expr);
 
+    char *beginning = postfix;
     /* Initialize new empty head so that can be pushed and popped */
     stack *head = NULL;
 
@@ -447,7 +457,8 @@ matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
             
             head = pop(head);
             
-            matrix_sf *prod = mult_mats_sf(temp1, head->mat);
+            /* Switch head->mat and temp because was backwards before, postfix does in reverse order */
+            matrix_sf *prod = mult_mats_sf(head->mat, temp1);
             if (temp1->name == '?') {
                 free(temp1);
             }
@@ -504,7 +515,7 @@ matrix_sf* evaluate_expr_sf(char name, char *expr, bst_sf *root) {
         exit(EXIT_FAILURE);
     }
 
-    // free(postfix);
+    free(beginning);
 
     return final;
 }
@@ -555,6 +566,8 @@ matrix_sf *execute_script_sf(char *filename) {
             }
         
             printf("MATRIX CREATED: %c\n", name);
+            print_matrix_sf(mat);
+
             /* Add to BST */
             root = insert_bst_sf(mat, root);
         }
@@ -564,7 +577,7 @@ matrix_sf *execute_script_sf(char *filename) {
             int isEval = sscanf(str, " %c = %c ", &name, &evCh);
             printf("Name: %c, First: %c\n", name, evCh);
             if (isEval == 2) {
-                if (!((evCh >= 'A') && (evCh <= 'Z')) || (evCh == '(')) {
+                if (!(((evCh >= 'A') && (evCh <= 'Z')) || (evCh == '('))) {
                     perror("EVAL CHARACTER VALIDITY ERROR");
                     exit(EXIT_FAILURE);
                 }
